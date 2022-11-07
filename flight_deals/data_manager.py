@@ -20,4 +20,5 @@ class DataManager:
     def get_rows_from_sheet(self, sheet_name: str) -> list[Row] | None:
         response = requests.get(url=f'{self.spreadsheet_url}{sheet_name}')
         response.raise_for_status()
-        return response.json().get(sheet_name)
+        data = response.json()
+        return (isinstance(data, dict) and data.get(sheet_name)) or None
