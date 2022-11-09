@@ -1,8 +1,9 @@
-import pydantic
+from pydantic import BaseSettings, HttpUrl, SecretStr
 
 
-class SheetAPISettings(pydantic.BaseSettings):
-    SPREADSHEET_URL: pydantic.HttpUrl
+class SheetAPISettings(BaseSettings):
+    SPREADSHEET_URL: HttpUrl
+    AUTH: SecretStr | None = None
 
     class Config:
         env_file = '.env'
