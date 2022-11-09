@@ -35,3 +35,15 @@ class DataManager:
         response.raise_for_status()
         data = response.json()
         return (isinstance(data, dict) and data.get(sheet_name)) or None
+
+    @validate_arguments
+    def update_sheet_row(
+        self, sheet_name: str, row_id: int, body: dict[str, Any]
+    ) -> dict[str, Any]:
+        response = requests.put(
+            url=f'{self.spreadsheet_url}{sheet_name}/{row_id}',
+            headers=self.headers,
+            json=body,
+        )
+        response.raise_for_status()
+        return response.json()

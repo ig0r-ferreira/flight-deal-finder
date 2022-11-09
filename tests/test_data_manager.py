@@ -114,3 +114,25 @@ def test_get_rows_from_sheet_should_return_none_when_response_json_is_empty_dict
     rows = data_manager.get_rows_from_sheet(TEST_SHEET_NAME)
 
     assert rows is None
+
+
+def test_update_sheet_row_successfully(
+    make_data_manager: DataManagerFactory, requests_mock: Mocker
+) -> None:
+
+    data_manager = make_data_manager(TEST_URL, TEST_AUTH)
+    row_id = 2
+    body = {
+        'example': {'city': 'x', 'iataCode': 'y', 'lowestPrice': 50}
+    }
+
+    requests_mock.put(
+        url=f'{data_manager.spreadsheet_url}{TEST_SHEET_NAME}/{row_id}',
+        headers=data_manager.headers,
+        status_code=200,
+        json=body,
+    )
+
+    result = data_manager.update_sheet_row(TEST_SHEET_NAME, row_id, body)
+
+    assert result == body
