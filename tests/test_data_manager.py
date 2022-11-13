@@ -122,9 +122,7 @@ def test_update_sheet_row_successfully(
 
     data_manager = make_data_manager(TEST_URL, TEST_AUTH)
     row_id = 2
-    body = {
-        'example': {'city': 'x', 'iataCode': 'y', 'lowestPrice': 50}
-    }
+    body = {'example': {'city': 'x', 'iataCode': 'y', 'lowestPrice': 50}}
 
     requests_mock.put(
         url=f'{data_manager.spreadsheet_url}{TEST_SHEET_NAME}/{row_id}',
