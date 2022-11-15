@@ -1,4 +1,6 @@
+import posixpath
 from typing import Callable
+from urllib.parse import urljoin
 
 import pytest
 from mypy_extensions import DefaultArg
@@ -25,14 +27,6 @@ def make_data_manager() -> DataManagerFactory:
     return _make_data_manager
 
 
-def test_data_manager_add_slash_at_end_of_url_when_started_without_trailing_slash(
-    make_data_manager: DataManagerFactory,
-) -> None:
-    data_manager = make_data_manager(TEST_URL.strip('/'), TEST_AUTH)
-
-    assert data_manager.spreadsheet_url.endswith('/')
-
-
 def test_data_manager_headers_are_empty_when_started_without_authorization(
     make_data_manager: DataManagerFactory,
 ) -> None:
@@ -48,7 +42,7 @@ def test_get_rows_from_sheet_with_invalid_auth_key(
     data_manager = make_data_manager(TEST_URL, 'invalid_auth')
 
     requests_mock.get(
-        url=f'{data_manager.spreadsheet_url}{TEST_SHEET_NAME}',
+        url=urljoin(data_manager.spreadsheet_url, TEST_SHEET_NAME),
         headers=data_manager.headers,
         status_code=401,
     )
@@ -67,7 +61,7 @@ def test_get_rows_from_sheet_to_a_non_existent_sheet(
     sheet_name = 'non-existent-sheet'
 
     requests_mock.get(
-        url=f'{data_manager.spreadsheet_url}{sheet_name}',
+        url=urljoin(data_manager.spreadsheet_url, sheet_name),
         headers=data_manager.headers,
         status_code=404,
     )
@@ -78,14 +72,14 @@ def test_get_rows_from_sheet_to_a_non_existent_sheet(
     assert exc_info.match('404 Client Error')
 
 
-def test_get_rows_from_sheet_should_return_a_list_of_dicts(
+def test_get_rows_from_sheet_must_return_a_list(
     make_data_manager: DataManagerFactory, requests_mock: Mocker
 ) -> None:
 
     data_manager = make_data_manager(TEST_URL, TEST_AUTH)
 
     requests_mock.get(
-        url=f'{data_manager.spreadsheet_url}{TEST_SHEET_NAME}',
+        url=urljoin(data_manager.spreadsheet_url, TEST_SHEET_NAME),
         headers=data_manager.headers,
         status_code=200,
         json={TEST_SHEET_NAME: [{'key1': 25.50}, {'key2': 30.00}]},
@@ -93,28 +87,8 @@ def test_get_rows_from_sheet_should_return_a_list_of_dicts(
 
     rows = data_manager.get_rows_from_sheet(TEST_SHEET_NAME)
 
-    assert isinstance(rows, list) and all(
-        isinstance(row, dict) for row in rows
-    )
-
-
-def test_get_rows_from_sheet_should_return_none_when_response_json_is_empty_dict(
-    make_data_manager: DataManagerFactory, requests_mock: Mocker
-) -> None:
-
-    data_manager = make_data_manager(TEST_URL, TEST_AUTH)
-
-    requests_mock.get(
-        url=f'{data_manager.spreadsheet_url}{TEST_SHEET_NAME}',
-        headers=data_manager.headers,
-        status_code=200,
-        json={},
-    )
-
-    rows = data_manager.get_rows_from_sheet(TEST_SHEET_NAME)
-
-    assert rows is None
-
+    assert isinstance(rows, list)
+    
 
 def test_update_sheet_row_successfully(
     make_data_manager: DataManagerFactory, requests_mock: Mocker
@@ -125,7 +99,10 @@ def test_update_sheet_row_successfully(
     body = {'example': {'city': 'x', 'iataCode': 'y', 'lowestPrice': 50}}
 
     requests_mock.put(
-        url=f'{data_manager.spreadsheet_url}{TEST_SHEET_NAME}/{row_id}',
+        url=urljoin(
+            data_manager.spreadsheet_url,
+            posixpath.join(TEST_SHEET_NAME, str(row_id)),
+        ),
         headers=data_manager.headers,
         status_code=200,
         json=body,

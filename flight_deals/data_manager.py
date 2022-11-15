@@ -1,7 +1,10 @@
+import posixpath
+
 from typing import Any
+from urllib.parse import urljoin
 
 import requests
-from pydantic import HttpUrl, SecretStr, parse_obj_as, validate_arguments
+from pydantic import HttpUrl, SecretStr, validate_arguments
 
 Row = dict[str, Any]
 
@@ -13,9 +16,6 @@ class DataManager:
     def __init__(
         self, spreadsheet_url: HttpUrl, auth: SecretStr | None = None
     ) -> None:
-        if not spreadsheet_url.endswith('/'):
-            spreadsheet_url = parse_obj_as(HttpUrl, f'{spreadsheet_url}/')
-
         self.spreadsheet_url = spreadsheet_url
         self.auth = auth
 
@@ -27,21 +27,22 @@ class DataManager:
         return {'Authorization': self.auth.get_secret_value()}
 
     @validate_arguments
-    def get_rows_from_sheet(self, sheet_name: str) -> list[Row] | None:
+    def get_rows_from_sheet(self, sheet_name: str) -> list[Row]:
         response = requests.get(
-            url=f'{self.spreadsheet_url}{sheet_name}',
+            url=urljoin(self.spreadsheet_url, sheet_name),
             headers=self.headers,
         )
         response.raise_for_status()
-        data = response.json()
-        return (isinstance(data, dict) and data.get(sheet_name)) or None
+        return response.json().get(sheet_name, [])
 
     @validate_arguments
     def update_sheet_row(
         self, sheet_name: str, row_id: int, body: dict[str, Any]
     ) -> dict[str, Any]:
         response = requests.put(
-            url=f'{self.spreadsheet_url}{sheet_name}/{row_id}',
+            url=urljoin(
+                self.spreadsheet_url, posixpath.join(sheet_name, str(row_id))
+            ),
             headers=self.headers,
             json=body,
         )
