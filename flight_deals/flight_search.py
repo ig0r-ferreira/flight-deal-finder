@@ -4,6 +4,7 @@ from urllib.parse import urljoin
 import requests
 from pydantic import (
     BaseModel,
+    Field,
     HttpUrl,
     PositiveInt,
     SecretStr,
@@ -18,11 +19,13 @@ class FlightSearchParams(BaseModel):
     date_to: str
     curr: str
     nights_in_dst_from: PositiveInt = 7
-    nights_in_dst_to: PositiveInt = 14
+    nights_in_dst_to: PositiveInt = 7
     flight_type: str = 'round'
     price_from: PositiveInt | None = None
     price_to: PositiveInt | None = None
-    limit: PositiveInt = 100
+    one_for_city: PositiveInt | None = None
+    max_stopovers: int = Field(0, ge=0)
+    limit: PositiveInt = 10
 
 
 class FlightSearch:
@@ -66,7 +69,7 @@ class FlightSearch:
     @validate_arguments
     def search_flights(
         self, flight_params: FlightSearchParams
-    ) -> dict[str, Any]:
+    ) -> list[dict[str, Any]]:
         response = requests.get(
             url=urljoin(self.base_url, 'v2/search'),
             headers=self.headers,
