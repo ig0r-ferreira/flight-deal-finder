@@ -5,18 +5,14 @@ import pytest
 from pytest_mock import MockFixture
 
 from flight_deals.email_client import EmailClient, make_message
-from flight_deals.settings import get_settings
-
-SETTINGS = get_settings()
-EMAIL_SETTINGS = SETTINGS.EMAIL
-SMTP_SETTINGS = SETTINGS.SMTP_SERVER
+from flight_deals.settings import EMAIL, SMTP_SERVER
 
 
 @pytest.fixture
 def message_data() -> dict[str, Any]:
     return {
-        'from_address': EMAIL_SETTINGS.SENDER,
-        'to_address': EMAIL_SETTINGS.RECIPIENTS,
+        'from_address': EMAIL.SENDER,
+        'to_address': EMAIL.RECIPIENTS,
         'subject': 'Test',
         'body': 'Testing the creation of a message',
     }
@@ -42,11 +38,11 @@ def test_create_message_must_throw_value_error_for_invalid_content_type(
 
 
 def test_send_email(message_data: dict[str, Any], mocker: MockFixture) -> None:
-    user = SMTP_SETTINGS.USERNAME.get_secret_value()
-    password = SMTP_SETTINGS.PASSWORD.get_secret_value()
+    user = SMTP_SERVER.USERNAME.get_secret_value()
+    password = SMTP_SERVER.PASSWORD.get_secret_value()
 
     email_client = EmailClient(
-        smtp_server=SMTP(f'{SMTP_SETTINGS.HOST}:{SMTP_SETTINGS.PORT}'),
+        smtp_server=SMTP(f'{SMTP_SERVER.HOST}:{SMTP_SERVER.PORT}'),
         credentials=(user, password),
     )
 
@@ -54,7 +50,7 @@ def test_send_email(message_data: dict[str, Any], mocker: MockFixture) -> None:
         **{
             'connect.return_value': (
                 220,
-                f'{SMTP_SETTINGS.HOST} ESMTP ready'.encode(),
+                f'{SMTP_SERVER.HOST} ESMTP ready'.encode(),
             ),
             'starttls.return_value': (220, b'2.0.0 Start TLS'),
             'login.return_value': (235, b'2.0.0 OK'),
@@ -69,7 +65,7 @@ def test_send_email(message_data: dict[str, Any], mocker: MockFixture) -> None:
 
     assert fake_smtp.connect() == (
         220,
-        f'{SMTP_SETTINGS.HOST} ESMTP ready'.encode(),
+        f'{SMTP_SERVER.HOST} ESMTP ready'.encode(),
     )
     assert fake_smtp.starttls() == (220, b'2.0.0 Start TLS')
     assert fake_smtp.login(user, password) == (235, b'2.0.0 OK')

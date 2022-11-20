@@ -38,12 +38,7 @@ class EmailSettings(BaseSettings):
         env_prefix = 'EMAIL_'
 
 
-class Settings(BaseSettings):
-    SHEET_API: SheetAPISettings = SheetAPISettings()
-    FLIGHT_API: FlightAPISettings = FlightAPISettings()
-    SMTP_SERVER: SMTPSettings = SMTPSettings()
-    EMAIL: EmailSettings = EmailSettings()
-
-
-def get_settings() -> Settings:
-    return Settings()
+SHEET_API = SheetAPISettings()
+FLIGHT_API = FlightAPISettings()
+SMTP_SERVER = SMTPSettings()
+EMAIL = EmailSettings()

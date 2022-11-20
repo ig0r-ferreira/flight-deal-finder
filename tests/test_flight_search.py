@@ -6,18 +6,15 @@ from pydantic import HttpUrl, SecretStr, parse_obj_as
 from requests_mock import Mocker
 
 from flight_deals.flight_search import FlightSearch, FlightSearchParams
-from flight_deals.settings import get_settings
+from flight_deals.settings import FLIGHT_API
 
 
 @pytest.fixture
 def flight_search() -> FlightSearch:
-    settings = get_settings()
-    settings.FLIGHT_API.BASE_URL = parse_obj_as(
-        HttpUrl, 'https://flightapi.com/'
-    )
-    settings.FLIGHT_API.KEY = parse_obj_as(SecretStr, '12345')
+    FLIGHT_API.BASE_URL = parse_obj_as(HttpUrl, 'https://flightapi.com/')
+    FLIGHT_API.KEY = parse_obj_as(SecretStr, '12345')
 
-    return FlightSearch(settings.FLIGHT_API.BASE_URL, settings.FLIGHT_API.KEY)
+    return FlightSearch(FLIGHT_API.BASE_URL, FLIGHT_API.KEY)
 
 
 def test_iata_code_is_par_when_city_name_is_paris(

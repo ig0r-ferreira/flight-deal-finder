@@ -5,27 +5,23 @@ from flight_deals.data_manager import DataManager
 from flight_deals.email_client import EmailClient, make_message
 from flight_deals.flight_data import FlightItinerary
 from flight_deals.flight_search import FlightSearch, FlightSearchParams
-from flight_deals.settings import get_settings
+from flight_deals.settings import EMAIL, FLIGHT_API, SHEET_API, SMTP_SERVER
 
 
 def main() -> None:
-    settings = get_settings()
-
     data_manager = DataManager(
-        spreadsheet_url=settings.SHEET_API.SPREADSHEET_URL,
-        auth=settings.SHEET_API.AUTH,
+        spreadsheet_url=SHEET_API.SPREADSHEET_URL,
+        auth=SHEET_API.AUTH,
     )
     flight_search = FlightSearch(
-        base_url=settings.FLIGHT_API.BASE_URL,
-        api_key=settings.FLIGHT_API.KEY,
+        base_url=FLIGHT_API.BASE_URL,
+        api_key=FLIGHT_API.KEY,
     )
     email_client = EmailClient(
-        smtp_server=SMTP(
-            host=f'{settings.SMTP_SERVER.HOST}:{settings.SMTP_SERVER.PORT}'
-        ),
+        smtp_server=SMTP(host=f'{SMTP_SERVER.HOST}:{SMTP_SERVER.PORT}'),
         credentials=(
-            settings.SMTP_SERVER.USERNAME.get_secret_value(),
-            settings.SMTP_SERVER.PASSWORD.get_secret_value(),
+            SMTP_SERVER.USERNAME.get_secret_value(),
+            SMTP_SERVER.PASSWORD.get_secret_value(),
         ),
     )
 
@@ -61,8 +57,8 @@ def main() -> None:
 
         email_client.send_message(
             make_message(
-                from_address=settings.EMAIL.SENDER,
-                to_address=settings.EMAIL.RECIPIENTS,
+                from_address=EMAIL.SENDER,
+                to_address=EMAIL.RECIPIENTS,
                 subject=(
                     'Low price alert! Flight from '
                     f'{flight.departure_city} to {flight.destination_city}'
