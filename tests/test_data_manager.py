@@ -88,7 +88,7 @@ def test_get_rows_from_sheet_must_return_a_list(
     rows = data_manager.get_rows_from_sheet(TEST_SHEET_NAME)
 
     assert isinstance(rows, list)
-    
+
 
 def test_update_sheet_row_successfully(
     make_data_manager: DataManagerFactory, requests_mock: Mocker

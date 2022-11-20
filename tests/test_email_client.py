@@ -4,9 +4,8 @@ from typing import Any
 import pytest
 from pytest_mock import MockFixture
 
-from flight_deals.email_client import make_message, EmailClient
+from flight_deals.email_client import EmailClient, make_message
 from flight_deals.settings import get_settings
-
 
 SETTINGS = get_settings()
 EMAIL_SETTINGS = SETTINGS.EMAIL
