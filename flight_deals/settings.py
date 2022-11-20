@@ -20,6 +20,16 @@ class FlightAPISettings(BaseSettings):
         env_prefix = 'FLIGHT_API_'
 
 
+class SMTPSettings(BaseSettings):
+    HOST: str
+    PORT: int
+    USERNAME: SecretStr
+    PASSWORD: SecretStr
+
+    class Config:
+        env_prefix = 'SMTP_'
+
+
 class EmailSettings(BaseSettings):
     SENDER: str
     RECIPIENTS: str
@@ -31,6 +41,7 @@ class EmailSettings(BaseSettings):
 class Settings(BaseSettings):
     SHEET_API: SheetAPISettings = SheetAPISettings()
     FLIGHT_API: FlightAPISettings = FlightAPISettings()
+    SMTP_SERVER: SMTPSettings = SMTPSettings()
     EMAIL: EmailSettings = EmailSettings()
 
 
