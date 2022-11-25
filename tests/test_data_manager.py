@@ -8,18 +8,18 @@ from pydantic import HttpUrl, SecretStr, parse_obj_as
 from requests.exceptions import HTTPError
 from requests_mock import Mocker
 
-from flight_deals.data_manager import DataManager
+from flight_deals.sheet_api import SheetAPI
 
 TEST_URL: str = 'https://myapi.com/projects/mysheet/'
 TEST_AUTH: str = 'Bearer 123456'
 TEST_SHEET_NAME = 'example'
-DataManagerFactory = Callable[[str, DefaultArg(str | None, None)], DataManager]
+DataManagerFactory = Callable[[str, DefaultArg(str | None, None)], SheetAPI]
 
 
 @pytest.fixture
 def make_data_manager() -> DataManagerFactory:
-    def _make_data_manager(url: str, auth: str | None = None) -> DataManager:
-        return DataManager(
+    def _make_data_manager(url: str, auth: str | None = None) -> SheetAPI:
+        return SheetAPI(
             spreadsheet_url=parse_obj_as(HttpUrl, url),
             auth=SecretStr(auth) if auth is not None else auth,
         )

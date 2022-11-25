@@ -1,15 +1,20 @@
 from datetime import date, timedelta
 from smtplib import SMTP
 
+from flight_deals.controller import (
+    find_cheap_flights,
+    notify,
+    update_destination_codes,
+)
 from flight_deals.data_manager import DataManager
-from flight_deals.email_client import EmailClient, make_message
-from flight_deals.flight_data import FlightItinerary
-from flight_deals.flight_search import FlightSearch, FlightSearchParams
+from flight_deals.email_client import EmailClient
+from flight_deals.flight_search import FlightSearch
 from flight_deals.settings import EMAIL, FLIGHT_API, SHEET_API, SMTP_SERVER
+from flight_deals.sheet_api import SheetAPI
 
 
 def main() -> None:
-    data_manager = DataManager(
+    sheet_api = SheetAPI(
         spreadsheet_url=SHEET_API.SPREADSHEET_URL,
         auth=SHEET_API.AUTH,
     )
@@ -25,47 +30,28 @@ def main() -> None:
         ),
     )
 
-    sheet_name = 'prices'
-    destinations = data_manager.get_rows_from_sheet(sheet_name)
+    destinations = DataManager('prices', sheet_api)
+    destinations.load_data()
+    update_destination_codes(
+        destinations, flight_search.get_iata_code_by_city_name
+    )
 
     tomorrow = f'{date.today() + timedelta(days=1):%d/%m/%Y}'
     six_months_from_now = f'{date.today() + timedelta(days=180):%d/%m/%Y}'
 
-    for destination in destinations:
+    cheap_flights = find_cheap_flights(
+        destinations,
+        flight_search.search_flights,
+        {
+            'fly_from': 'SSA',
+            'date_from': tomorrow,
+            'date_to': six_months_from_now,
+            'curr': 'BRL',
+            'max_stopovers': 2,
+        },
+    )
 
-        destination_code = flight_search.get_iata_code_by_city_name(
-            destination['city']
-        )
-        if not destination_code:
-            continue
-
-        available_itineraries = flight_search.search_flights(
-            flight_params=FlightSearchParams(
-                fly_from='SSA',
-                fly_to=destination_code,
-                date_from=tomorrow,
-                date_to=six_months_from_now,
-                curr='BRL',
-                price_to=destination['lowestPrice'],
-                max_stopovers=2,
-            )
-        )
-        if not available_itineraries:
-            continue
-
-        flight = FlightItinerary.parse_obj(available_itineraries[0])
-
-        email_client.send_message(
-            make_message(
-                from_address=EMAIL.SENDER,
-                to_address=EMAIL.RECIPIENTS,
-                subject=(
-                    'Low price alert! Flight from '
-                    f'{flight.departure_city} to {flight.destination_city}'
-                ),
-                body=str(flight),
-            )
-        )
+    notify(cheap_flights, email_client, EMAIL.SENDER, EMAIL.RECIPIENTS)
 
 
 if __name__ == '__main__':

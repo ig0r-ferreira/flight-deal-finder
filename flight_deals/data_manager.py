@@ -1,49 +1,22 @@
-import posixpath
 from typing import Any
-from urllib.parse import urljoin
 
-import requests
-from pydantic import HttpUrl, SecretStr, validate_arguments
-
-Row = dict[str, Any]
+from flight_deals.sheet_api import SheetAPI
 
 
 class DataManager:
-    """This class is responsible for talking to the Google Sheet."""
+    def __init__(self, sheet_name: str, sheet_api: SheetAPI) -> None:
+        self.sheet_name = sheet_name
+        self.sheet_api = sheet_api
+        self.data: list[dict[str, Any]] = []
 
-    @validate_arguments
-    def __init__(
-        self, spreadsheet_url: HttpUrl, auth: SecretStr | None = None
-    ) -> None:
-        self.spreadsheet_url = spreadsheet_url
-        self.auth = auth
+    def load_data(self) -> None:
+        self.data = self.sheet_api.get_rows_from_sheet(self.sheet_name)
 
-    @property
-    def headers(self) -> dict[str, Any]:
-        if self.auth is None:
-            return {}
-
-        return {'Authorization': self.auth.get_secret_value()}
-
-    @validate_arguments
-    def get_rows_from_sheet(self, sheet_name: str) -> list[Row]:
-        response = requests.get(
-            url=urljoin(self.spreadsheet_url, sheet_name),
-            headers=self.headers,
-        )
-        response.raise_for_status()
-        return response.json().get(sheet_name, [])
-
-    @validate_arguments
-    def update_sheet_row(
-        self, sheet_name: str, row_id: int, body: dict[str, Any]
-    ) -> dict[str, Any]:
-        response = requests.put(
-            url=urljoin(
-                self.spreadsheet_url, posixpath.join(sheet_name, str(row_id))
-            ),
-            headers=self.headers,
-            json=body,
-        )
-        response.raise_for_status()
-        return response.json()
+    def update_data(self, obj_name: str) -> None:
+        for record in self.data:
+            self.sheet_api.update_sheet_row(
+                sheet_name=self.sheet_name,
+                row_id=record['id'],
+                body={obj_name: record},
+            )
+        self.load_data()
