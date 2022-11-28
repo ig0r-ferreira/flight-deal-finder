@@ -52,7 +52,8 @@ def notify(
                 from_address=sender,
                 to_address=recipients,
                 subject=(
-                    'Low price alert! Flight from '
+                    f'Low price alert! '
+                    f'Only {flight.price} {flight.currency} to fly from '
                     f'{flight.departure_city} to {flight.destination_city}'
                 ),
                 body=str(flight),

@@ -14,12 +14,19 @@ from flight_deals.settings import EMAIL, FLIGHT_API, SHEET_API, SMTP_SERVER
 from flight_deals.sheet_api import SheetAPI
 
 
+def load_data_manager(data_manager: DataManager) -> DataManager:
+    logging.info(f'Loading {data_manager.sheet_name}...')
+    data_manager.load_data()
+    logging.info(f'{data_manager.sheet_name.capitalize()} loading completed.')
+    return data_manager
+
+
 def main() -> None:
     logging.basicConfig(
         level=logging.INFO,
-        format='%(asctime)s | %(name)s | %(levelname)s: %(message)s'
+        format='%(asctime)s | %(name)s | %(levelname)s: %(message)s',
     )
-    
+
     sheet_api = SheetAPI(
         spreadsheet_url=SHEET_API.SPREADSHEET_URL,
         auth=SHEET_API.AUTH,
@@ -36,14 +43,11 @@ def main() -> None:
         ),
     )
 
-    destinations = DataManager('destinations', sheet_api)
-    logging.info('Loading destinations...')
-    destinations.load_data()
-    logging.info('Destination loading completed.')
+    recipients = load_data_manager(DataManager('destinations', sheet_api))
 
     logging.info('Updating destination codes...')
     update_destination_codes(
-        destinations, flight_search.get_iata_code_by_city_name
+        recipients, flight_search.get_iata_code_by_city_name
     )
     logging.info('Destination codes update completed.')
 
@@ -52,7 +56,7 @@ def main() -> None:
 
     logging.info('Searching for cheap flights...')
     cheap_flights = find_cheap_flights(
-        destinations,
+        recipients,
         flight_search.search_flights,
         {
             'fly_from': 'SSA',
@@ -63,13 +67,20 @@ def main() -> None:
         },
     )
     logging.info('Search completed.')
-    
-    if cheap_flights:
-        logging.info('Sending flight notification by email...')
-        notify(cheap_flights, email_client, EMAIL.SENDER, EMAIL.RECIPIENTS)
-        logging.info('Sending emails completed.')
-    else:
+
+    if not cheap_flights:
         logging.info('No cheap flights found.')
+        return
+
+    recipients = load_data_manager(DataManager('recipients', sheet_api))
+    recipients_emails = [recipient['email'] for recipient in recipients.data]
+    if not recipients_emails:
+        logging.info('No email found.')
+        return
+
+    logging.info('Sending flight notification by email...')
+    notify(cheap_flights, email_client, EMAIL.SENDER, recipients_emails)
+    logging.info('Sending emails completed.')
 
 
 if __name__ == '__main__':
