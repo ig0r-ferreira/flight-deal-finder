@@ -1,3 +1,4 @@
+import logging
 from datetime import date, timedelta
 from smtplib import SMTP
 
@@ -14,6 +15,11 @@ from flight_deals.sheet_api import SheetAPI
 
 
 def main() -> None:
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s | %(name)s | %(levelname)s: %(message)s'
+    )
+    
     sheet_api = SheetAPI(
         spreadsheet_url=SHEET_API.SPREADSHEET_URL,
         auth=SHEET_API.AUTH,
@@ -30,15 +36,21 @@ def main() -> None:
         ),
     )
 
-    destinations = DataManager('prices', sheet_api)
+    destinations = DataManager('destinations', sheet_api)
+    logging.info('Loading destinations...')
     destinations.load_data()
+    logging.info('Destination loading completed.')
+
+    logging.info('Updating destination codes...')
     update_destination_codes(
         destinations, flight_search.get_iata_code_by_city_name
     )
+    logging.info('Destination codes update completed.')
 
     tomorrow = f'{date.today() + timedelta(days=1):%d/%m/%Y}'
     six_months_from_now = f'{date.today() + timedelta(days=180):%d/%m/%Y}'
 
+    logging.info('Searching for cheap flights...')
     cheap_flights = find_cheap_flights(
         destinations,
         flight_search.search_flights,
@@ -50,8 +62,14 @@ def main() -> None:
             'max_stopovers': 2,
         },
     )
-
-    notify(cheap_flights, email_client, EMAIL.SENDER, EMAIL.RECIPIENTS)
+    logging.info('Search completed.')
+    
+    if cheap_flights:
+        logging.info('Sending flight notification by email...')
+        notify(cheap_flights, email_client, EMAIL.SENDER, EMAIL.RECIPIENTS)
+        logging.info('Sending emails completed.')
+    else:
+        logging.info('No cheap flights found.')
 
 
 if __name__ == '__main__':
