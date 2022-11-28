@@ -11,7 +11,7 @@ def update_destination_codes(
     for row in destinations.data:
         row['iataCode'] = get_code_fn(row['city'])
 
-    destinations.update_data('price')
+    destinations.update_data()
 
 
 def find_cheap_flights(

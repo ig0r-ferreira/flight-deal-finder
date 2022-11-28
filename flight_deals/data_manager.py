@@ -12,11 +12,11 @@ class DataManager:
     def load_data(self) -> None:
         self.data = self.sheet_api.get_rows_from_sheet(self.sheet_name)
 
-    def update_data(self, obj_name: str) -> None:
+    def update_data(self) -> None:
         for record in self.data:
             self.sheet_api.update_sheet_row(
                 sheet_name=self.sheet_name,
                 row_id=record['id'],
-                body={obj_name: record},
+                body=record,
             )
         self.load_data()

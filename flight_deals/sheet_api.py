@@ -2,10 +2,16 @@ import posixpath
 from typing import Any
 from urllib.parse import urljoin
 
+import inflect
 import requests
 from pydantic import HttpUrl, SecretStr, validate_arguments
 
 Row = dict[str, Any]
+inflect_engine = inflect.engine()
+
+
+def get_singular_noun(noun: str) -> str:
+    return str(inflect_engine.singular_noun(noun) or noun)
 
 
 class SheetAPI:
@@ -43,7 +49,7 @@ class SheetAPI:
                 self.spreadsheet_url, posixpath.join(sheet_name, str(row_id))
             ),
             headers=self.headers,
-            json=body,
+            json={get_singular_noun(sheet_name): body},
         )
         response.raise_for_status()
         return response.json()
