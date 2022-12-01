@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "flight-deals"
+name = "flight-deal-finder"
 version = "0.1.0"
 description = ""
 authors = ["Igor Ferreira <iferreira.n01@gmail.com>"]
